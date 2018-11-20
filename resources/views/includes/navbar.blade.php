@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand-md navbar-dark bg-dark">
     <div class="container">
-        <a class="navbar-brand" href="{{ url('/') }}">{{ config('app.name') }}</a>
+        <a class="navbar-brand" href="{{ route('polls.create') }}">{{ config('app.name') }}</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -8,8 +8,8 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <!-- Left Side Of Navbar -->
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item"><a class="nav-link" href="{{ route('polls.index') }}">All Polls</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('polls.create') }}">Add Poll</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ route('polls.index') }}">All Polls</a></li>
                 <li class="nav-item"><a class="nav-link" href="{{ route('about') }}">About</a></li>
             </ul>
 
@@ -32,8 +32,8 @@
                         </a>
 
                         <div class="dropdown-menu dropdown-menu-right">
-                            <a class="dropdown-item" href="{{ route('home') }}">My Polls</a>
-                            <button class="dropdown-item" form="logout-form" style="cursor:pointer">{{ __('Logout') }}</button>
+                            <a class="dropdown-item" href="{{ route('account') }}">My Account</a>
+                            <button class="dropdown-item cursor-pointer" form="logout-form">{{ __('Logout') }}</button>
 
                             <form id="logout-form" action="{{ route('logout') }}" method="POST" hidden">@csrf</form>
                         </div>

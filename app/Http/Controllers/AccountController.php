@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\User;
 
-class HomeController extends Controller
+class AccountController extends Controller
 {
     /**
      * Create a new controller instance.
@@ -26,6 +26,6 @@ class HomeController extends Controller
     {
         $user_id = auth()->user()->id;
         $user = User::find($user_id);
-        return view('home')->with('polls', $user->polls);
+        return view('auth.account', ['polls' => $user->polls]);
     }
 }

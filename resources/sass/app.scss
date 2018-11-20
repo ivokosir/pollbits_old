@@ -1,1 +1,34 @@
 @import '~bootstrap/scss/bootstrap';
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.score-input {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: -0.2rem 0 0 0;
+}
+
+.score-input-text {
+    width: 100%;
+    height: 0;
+    margin: -.8rem 0 0 0;
+    text-align: center;
+    font-size: 80%;
+}
+
+.result-bar {
+    position: absolute;
+    bottom: 0.2rem;
+    left: 0;
+    width: 0;
+    height: 0.5rem;
+    background-color: $primary;
+}
+
+.pagination {
+    margin: 1rem;
+    justify-content: center;
+}

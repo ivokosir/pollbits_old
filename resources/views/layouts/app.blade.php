@@ -22,10 +22,12 @@
             </div>
         </main>
     </div>
+    @hasSection('script')
     <script>
         window.addEventListener('DOMContentLoaded', function() {
             @yield('script')
         });
     </script>
+    @endif
 </body>
 </html>

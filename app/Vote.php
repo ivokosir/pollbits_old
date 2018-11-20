@@ -8,7 +8,7 @@ class Vote extends Model
 {
     public $timestamps = false;
 
-    public function option() {
-        return $this->belongsTo('App\Option');
+    public function poll() {
+        return $this->belongsTo('App\Poll');
     }
 }

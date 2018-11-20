@@ -11,14 +11,16 @@
 |
 */
 
-Route::get('/', 'PagesController@home');
-Route::get('/about', 'PagesController@about')->name('about');
-
-Route::resource('polls', 'PollController');
+Route::resource('polls', 'PollController')->except(['create']);
+Route::get('/', 'PollController@create')->name('polls.create');
+Route::get('/polls/{poll}/results', 'PollController@results')->name('polls.results');
 
 Route::post('/votes', 'VoteController@store')->name('votes.store');
 Route::delete('/votes/{vote}', 'VoteController@delete')->name('votes.delete');
 
 Auth::routes();
+Route::get('/account', 'AccountController@index')->name('account');
 
-Route::get('/home', 'HomeController@index')->name('home');
+Route::get('/about', function () {
+    return view('pages.about');
+})->name('about');

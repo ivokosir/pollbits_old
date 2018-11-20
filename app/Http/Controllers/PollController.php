@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Poll;
 use App\Option;
+use App\Score;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class PollController extends Controller
 {
@@ -15,7 +18,7 @@ class PollController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth')->except('index', 'create', 'show', 'store');
+        $this->middleware('auth')->except('index', 'create', 'show', 'store', 'results');
         $this->middleware('can:update,poll')->only('edit', 'update');
         $this->middleware('can:delete,poll')->only('destroy');
     }
@@ -27,8 +30,8 @@ class PollController extends Controller
      */
     public function index()
     {
-        $polls = Poll::orderBy('created_at','desc')->paginate(10);
-        return view('polls.index')->with('polls', $polls);
+        $polls = Poll::latest()->paginate(10);
+        return view('polls.index', ['polls' => $polls]);
     }
 
     /**
@@ -51,16 +54,22 @@ class PollController extends Controller
     {
         $this->validate($request, [
             'question' => 'required|string|max:255',
-            'option' => 'required|array|min:2',
-            'option.*' => 'required|string|distinct|max:255',
+            'type' => [
+                'required',
+                'string',
+                Rule::in(['fptp', 'approval', 'score']),
+            ],
+            'options' => 'required|array|min:2',
+            'options.*' => 'required|string|distinct|max:255',
         ]);
 
         $poll = new Poll;
+        $poll->type = $request->input('type');
         $poll->question = $request->input('question');
         $poll->user_id = auth()->user()->id ?? null;
         $poll->save();
 
-        foreach ($request->input('option') as $text) {
+        foreach ($request->input('options') as $text) {
             $option = new Option;
             $option->text = $text;
             $option->poll_id = $poll->id;
@@ -78,7 +87,7 @@ class PollController extends Controller
      */
     public function show(Poll $poll)
     {
-        return view('polls.show')->with('poll', $poll);
+        return view('polls.show', ['poll' => $poll]);
     }
 
     /**
@@ -89,7 +98,7 @@ class PollController extends Controller
      */
     public function edit(Poll $poll)
     {
-        return view('polls.edit')->with('poll', $poll);
+        return view('polls.edit', ['poll' => $poll]);
     }
 
     /**
@@ -103,15 +112,15 @@ class PollController extends Controller
     {
         $this->validate($request, [
             'question' => 'required|string|max:255',
-            'option' => 'required|array|size:' . sizeof($poll->options),
-            'option.*' => 'required|string|distinct|max:255',
+            'options' => 'required|array|size:' . sizeof($poll->options),
+            'options.*' => 'required|string|distinct|max:255',
         ]);
 
         $poll->question = $request->input('question');
         $poll->save();
 
         foreach ($poll->options as $i => $option) {
-            $option->text = $request->input('option')[$i];
+            $option->text = $request->input('options')[$i];
             $option->save();
         }
 
@@ -128,5 +137,31 @@ class PollController extends Controller
     {
         $poll->delete();
         return redirect()->route('polls.index');
+    }
+
+    /**
+     * Display poll results.
+     *
+     * @param  \App\Poll  $poll
+     * @return \Illuminate\Http\Response
+     */
+    public function results(Poll $poll)
+    {
+        $voteCount = $poll->votes()->count();
+
+        $results =
+            DB::table('options')
+                ->leftJoin('scores', 'options.id', '=', 'scores.option_id')
+                ->where('options.poll_id', '=', $poll->id)
+                ->groupBy('options.id')
+                ->selectRaw('options.text as text, IFNULL(SUM(scores.score), 0) as score, IFNULL(SUM(scores.score) / ?, 0) as average', [$voteCount])
+                ->orderBy('average', 'desc')
+                ->get();
+
+        return view('polls.results', [
+            'poll' => $poll,
+            'voteCount' => $voteCount,
+            'results' => $results,
+        ]);
     }
 }

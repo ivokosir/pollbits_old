@@ -1,29 +1,27 @@
-@extends('layouts.app')
+@extends('layouts.card')
 
-@section('content')
-<div class="card">
-    <div class="card-header">Edit Poll</div>
-    <div class="card-body">
-        <form method="POST" action="{{ route('polls.update', $poll->id) }}">
-            @csrf
-            @method('PUT')
-            <input type="text" class="form-control form-control-lg mb-3" value="{{ $poll->question }}" placeholder="Poll Question" name="question" required autofocus>
-            @foreach ($poll->options as $option)
-                @include('includes.option', [
-                    'edit' => true,
-                    'value' => $option->text,
-                    'index' => $loop->iteration . '.',
-                ])
-            @endforeach
-            <div class="btn-group">
-                <button type="submit" class="btn btn-primary">Update</button>
-                <a class="btn btn-secondary" href="{{ route('polls.show', $poll->id) }}">Cancel</a>
-            </div>
+@section('card')
+<div class="card-header">Edit Poll</div>
+<div class="card-body">
+    <form method="POST" action="{{ route('polls.update', $poll->id) }}">
+        @csrf
+        @method('PUT')
+        <input type="text" class="form-control form-control-lg mb-3" value="{{ $poll->question }}" placeholder="Poll Question" name="question" required autofocus>
+        @foreach ($poll->options as $option)
+            @include('includes.option', [
+                'edit' => true,
+                'value' => $option->text,
+                'index' => $loop->iteration . '.',
+            ])
+        @endforeach
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">Update</button>
+            <a class="btn btn-secondary" href="{{ route('polls.show', $poll->id) }}">Cancel</a>
+        </div>
 
-            <button type="button" class="btn btn-danger float-right" data-toggle="modal" data-target="#deleteWarning">Delete</button>
+        <button type="button" class="btn btn-danger float-right" data-toggle="modal" data-target="#deleteWarning">Delete</button>
 
-        </form>
-    </div>
+    </form>
 </div>
 
 <div class="modal fade" id="deleteWarning" tabindex="-1">
