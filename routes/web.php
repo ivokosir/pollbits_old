@@ -25,6 +25,6 @@ Route::delete('/votes/{vote}', 'VoteController@destroy')->name('votes.destroy');
 Auth::routes();
 Route::get('/account', 'AccountController@index')->name('account');
 
-Route::get('/about', function () {
-    return view('pages.about');
-})->name('about');
+Route::get('/about', 'PageController@about')->name('about');
+Route::get('/admin', 'PageController@admin')->name('admin');
+Route::post('/admin', 'PageController@adminRun')->name('admin.run');
