@@ -20,6 +20,16 @@ class VoteController extends Controller
         $this->validate($request, ['poll_id' => 'required|integer|exists:polls,id']);
 
         $poll = Poll::find($request->input('poll_id'));
+        if ($poll->closed) {
+            return back()->withErrors('The poll is closed.');
+        }
+
+        $ip = $request->ip();
+
+        $voted = Vote::where('ip', $ip)->where('poll_id', $poll->id)->exists();
+        if ($voted) {
+            return back()->withErrors('This IP address already voted.');
+        }
 
         $scores_raw = [];
 
@@ -67,6 +77,7 @@ class VoteController extends Controller
         }
 
         $vote = new Vote;
+        $vote->ip = $ip;
         $vote->poll_id = $poll->id;
         $vote->save();
 
@@ -84,12 +95,21 @@ class VoteController extends Controller
     /**
      * Remove the specified resource from storage.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @param  \App\Vote  $vote
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Vote $vote)
+    public function destroy(Request $request, Vote $vote)
     {
         $poll = $vote->poll;
+
+        if($vote->ip !== $request->ip()) {
+            return back()->withErrors('IP address has changed.');
+        }
+        if ($poll->closed) {
+            return back()->withErrors('The poll is closed.');
+        }
+
         $vote->delete();
 
         return redirect()->route('polls.show', $poll);

@@ -8,26 +8,26 @@ use App\Poll;
 class PollPolicy
 {
     /**
-     * Determine whether the user can update the poll.
+     * Determine whether the poll is owned by the user.
      *
      * @param  \App\User  $user
      * @param  \App\Poll  $poll
      * @return mixed
      */
-    public function update(User $user, Poll $poll)
+    public function owned(?User $user, Poll $poll)
     {
-        return $user->id === $poll->user_id;
+        return $poll->owned($user);
     }
 
     /**
-     * Determine whether the user can delete the poll.
+     * Determine whether the user can see poll results.
      *
      * @param  \App\User  $user
      * @param  \App\Poll  $poll
      * @return mixed
      */
-    public function delete(User $user, Poll $poll)
+    public function results(?User $user, Poll $poll)
     {
-        return $user->id === $poll->user_id;
+        return $poll->canSeeResults($user);
     }
 }

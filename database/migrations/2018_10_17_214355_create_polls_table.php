@@ -17,6 +17,9 @@ class CreatePollsTable extends Migration
             $table->increments('id');
             $table->string('type', 32);
             $table->string('question');
+            $table->boolean('results_hidden');
+            $table->boolean('private');
+            $table->boolean('closed');
             $table->unsignedInteger('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users');
             $table->timestamps();

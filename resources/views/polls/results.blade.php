@@ -1,23 +1,27 @@
 @extends('layouts.card')
 
 @section('card')
-<div class="card-header">
-    <h3>{{$poll->question}}</h3>
-</div>
+<h4 class="card-header">
+    {{$poll->question}}
+    @if ($poll->closed)
+    <span class="badge badge-warning">Closed</span>
+    @endif
+</h4>
 
 <div class="list-group list-group-flush">
     @foreach ($results as $result)
         @php
+        $average = $voteCount ? $result->score / $voteCount : 0;
         switch ($poll->type) {
             case 'approval':
             case 'fptp':
-                $barWidth = $result->average * 100;
+                $barWidth = $average * 100;
                 $display = number_format($barWidth) . '%';
                 $details = $result->score . ' votes';
                 break;
             case 'score':
-                $barWidth = $result->average / 5 * 100;
-                $display = number_format($result->average, 1);
+                $barWidth = $average / 5 * 100;
+                $display = number_format($average, 1);
                 $details = $result->score . ' points';
                 break;
         }
@@ -28,7 +32,7 @@
                 <div class="col">
                     {{ $result->text }}
                 </div>
-                <div class="col text-right">
+                <div class="col-auto text-right">
                     {{ $display }}
                 </div>
                 <div class="col-auto">
@@ -41,7 +45,26 @@
     @endforeach
 </div>
 
-<div class="card-body">
-    <a class="btn btn-secondary float-right" href="{{ route('polls.show', $poll->id) }}">Vote</a>
+<div class="card-body text-right">
+    @if (!$poll->closed)
+    <a class="btn btn-secondary" href="{{ route('polls.show', $poll->id) }}">Vote</a>
+    @endif
+    @if ($owned)
+    <a class="btn btn-secondary" href="{{ route('polls.edit', $poll->id) }}">Edit</a>
+    @endif
+</div>
+
+<div class="card-footer text-muted">
+    <div class="row">
+        <small class="col">
+            Created on {{ $poll->created_at }}
+            @isset($poll->user)
+                by {{ $poll->user->name }}
+            @endisset
+        </small>
+        <small class="col-sm-auto">
+            Total votes: {{ $voteCount }}
+        </small>
+    </div>
 </div>
 @endsection

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Poll;
 use App\Option;
+use App\Vote;
 use App\Score;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,23 +20,56 @@ class PollController extends Controller
     public function __construct()
     {
         $this->middleware('auth')->except('index', 'create', 'show', 'store', 'results');
-        $this->middleware('can:update,poll')->only('edit', 'update');
-        $this->middleware('can:delete,poll')->only('destroy');
+        $this->middleware('can:owned,poll')->only('edit', 'update', 'destroy');
+        $this->middleware('can:results,poll')->only('results');
     }
 
     /**
-     * Display a listing of the resource.
+     * Display a listing of polls.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $polls = Poll::latest()->paginate(10);
+        $this->validate($request, [
+            'search' => 'string|max:255',
+        ]);
+
+        $search = $request->input('search');
+
+        $polls = Poll::latest()
+                     ->where('question', 'like', '%'.$search.'%')
+                     ->where('private', false)
+                     ->paginate(10);
+
+        return view('polls.index', ['polls' => $polls, 'search' => $search]);
+    }
+
+    /**
+     * Display a listing of owned polls.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function owned(Request $request)
+    {
+        $this->validate($request, [
+            'search' => 'string|max:255',
+        ]);
+
+        $search = $request->input('search');
+
+        $polls = Poll::latest()
+                     ->where('question', 'like', '%'.$search.'%')
+                     ->where('user_id', auth()->user()->id)
+                     ->paginate(10);
+
         return view('polls.index', ['polls' => $polls]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new poll.
      *
      * @return \Illuminate\Http\Response
      */
@@ -45,7 +79,7 @@ class PollController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created poll in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
@@ -54,18 +88,21 @@ class PollController extends Controller
     {
         $this->validate($request, [
             'question' => 'required|string|max:255',
+            'options' => 'required|array|min:2',
+            'options.*' => 'required|string|max:255',
             'type' => [
                 'required',
                 'string',
                 Rule::in(['fptp', 'approval', 'score']),
             ],
-            'options' => 'required|array|min:2',
-            'options.*' => 'required|string|distinct|max:255',
         ]);
 
         $poll = new Poll;
         $poll->type = $request->input('type');
         $poll->question = $request->input('question');
+        $poll->results_hidden = $request->input('results_hidden') ? true : false;
+        $poll->private = $request->input('private') ? true : false;
+        $poll->closed = false;
         $poll->user_id = auth()->user()->id ?? null;
         $poll->save();
 
@@ -80,18 +117,49 @@ class PollController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified poll.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @param  \App\Poll  $poll
      * @return \Illuminate\Http\Response
      */
-    public function show(Poll $poll)
+    public function show(Request $request, Poll $poll)
     {
-        return view('polls.show', ['poll' => $poll]);
+        if ($poll->closed) {
+            return redirect()->route('polls.results', $poll);
+        }
+
+        $vote = Vote::where('ip', $request->ip())->where('poll_id', $poll->id)->first();
+
+        if ($vote) {
+            $options = DB::table('options')
+                         ->leftJoin('scores', function ($join) use ($vote) {
+                             $join->on('scores.option_id', '=', 'options.id')
+                                  ->where('scores.vote_id', $vote->id);
+                         })
+                         ->where('options.poll_id', $poll->id)
+                         ->selectRaw('options.text AS text, IFNULL(scores.score, 0) score')
+                         ->get();
+        } else {
+            $options = $poll->options;
+        }
+
+        $user = auth()->user();
+        $owned = $poll->owned($user);
+        $canSeeResults = $poll->canSeeResults($user);
+
+        return view('polls.show', [
+            'poll' => $poll,
+            'options' => $options,
+            'vote' => $vote,
+            'voted' => isset($vote),
+            'owned' => $owned,
+            'canSeeResults' => $canSeeResults,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified poll.
      *
      * @param  \App\Poll  $poll
      * @return \Illuminate\Http\Response
@@ -102,7 +170,7 @@ class PollController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified poll in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Poll  $poll
@@ -113,10 +181,12 @@ class PollController extends Controller
         $this->validate($request, [
             'question' => 'required|string|max:255',
             'options' => 'required|array|size:' . sizeof($poll->options),
-            'options.*' => 'required|string|distinct|max:255',
+            'options.*' => 'required|string|max:255',
         ]);
 
         $poll->question = $request->input('question');
+        $poll->results_hidden = $request->input('results_hidden') ? true : false;
+        $poll->private = $request->input('private') ? true : false;
         $poll->save();
 
         foreach ($poll->options as $i => $option) {
@@ -128,7 +198,7 @@ class PollController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified poll from storage.
      *
      * @param  \App\Poll  $poll
      * @return \Illuminate\Http\Response
@@ -137,6 +207,32 @@ class PollController extends Controller
     {
         $poll->delete();
         return redirect()->route('polls.index');
+    }
+
+    /**
+     * open the specified poll.
+     *
+     * @param  \App\Poll  $poll
+     * @return \Illuminate\Http\Response
+     */
+    public function open(Poll $poll)
+    {
+        $poll->closed = false;
+        $poll->save();
+        return redirect()->route('polls.show', $poll);
+    }
+
+    /**
+     * Close the specified poll.
+     *
+     * @param  \App\Poll  $poll
+     * @return \Illuminate\Http\Response
+     */
+    public function close(Poll $poll)
+    {
+        $poll->closed = true;
+        $poll->save();
+        return redirect()->route('polls.results', $poll);
     }
 
     /**
@@ -149,19 +245,22 @@ class PollController extends Controller
     {
         $voteCount = $poll->votes()->count();
 
-        $results =
-            DB::table('options')
-                ->leftJoin('scores', 'options.id', '=', 'scores.option_id')
-                ->where('options.poll_id', '=', $poll->id)
-                ->groupBy('options.id')
-                ->selectRaw('options.text as text, IFNULL(SUM(scores.score), 0) as score, IFNULL(SUM(scores.score) / ?, 0) as average', [$voteCount])
-                ->orderBy('average', 'desc')
-                ->get();
+        $results = DB::table('options')
+                     ->leftJoin('scores', 'scores.option_id', '=', 'options.id')
+                     ->where('options.poll_id', '=', $poll->id)
+                     ->groupBy('options.id')
+                     ->selectRaw('options.text as text, IFNULL(SUM(scores.score), 0) as score')
+                     ->orderBy('score', 'desc')
+                     ->orderBy('options.id')
+                     ->get();
+
+        $owned = $poll->owned(auth()->user());
 
         return view('polls.results', [
             'poll' => $poll,
             'voteCount' => $voteCount,
             'results' => $results,
+            'owned' => $owned,
         ]);
     }
 }
