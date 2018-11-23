@@ -41,10 +41,10 @@ class PageController extends Controller
 
         switch ($request->input('action')) {
             case 'migrate':
-                $exitCode = Artisan::call('migrate');
+                $exitCode = Artisan::call('migrate', ['--force' => true]);
                 break;
             case 'reset':
-                $exitCode = Artisan::call('migrate:reset');
+                $exitCode = Artisan::call('migrate:reset', ['--force' => true]);
                 break;
         }
 
