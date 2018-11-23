@@ -45,13 +45,21 @@
     @endforeach
 </div>
 
-<div class="card-body text-right">
-    @if (!$poll->closed)
-    <a class="btn btn-secondary" href="{{ route('polls.show', $poll->id) }}">Vote</a>
-    @endif
-    @if ($owned)
-    <a class="btn btn-secondary" href="{{ route('polls.edit', $poll->id) }}">Edit</a>
-    @endif
+<div class="card-body">
+    <div class="row">
+        <div class="col">
+            <a class="btn btn-secondary" href="{{ route('polls.resultsCSV', $poll->id) }}">Export CSV</a>
+        </div>
+
+        <div class="col-sm-auto mt-3 mt-sm-0">
+            @if (!$poll->closed)
+            <a class="btn btn-secondary" href="{{ route('polls.show', $poll->id) }}">Vote</a>
+            @endif
+            @if ($owned)
+            <a class="btn btn-secondary" href="{{ route('polls.edit', $poll->id) }}">Edit</a>
+            @endif
+        </div>
+    </div>
 </div>
 
 <div class="card-footer text-muted">

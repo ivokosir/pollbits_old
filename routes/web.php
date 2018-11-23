@@ -14,6 +14,7 @@
 Route::get('/polls/owned', 'PollController@owned')->name('polls.owned');
 Route::get('/', 'PollController@create')->name('polls.create');
 Route::get('/polls/{poll}/results', 'PollController@results')->name('polls.results');
+Route::get('/polls/{poll}/resultsCSV', 'PollController@resultsCSV')->name('polls.resultsCSV');
 Route::post('/polls/{poll}/open', 'PollController@open')->name('polls.open');
 Route::post('/polls/{poll}/close', 'PollController@close')->name('polls.close');
 Route::resource('polls', 'PollController')->except(['create']);

@@ -19,9 +19,9 @@ class PollController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth')->except('index', 'create', 'show', 'store', 'results');
+        $this->middleware('auth')->except('index', 'create', 'show', 'store', 'results', 'resultsCSV');
         $this->middleware('can:owned,poll')->only('edit', 'update', 'destroy');
-        $this->middleware('can:results,poll')->only('results');
+        $this->middleware('can:results,poll')->only('results', 'resultsCSV');
     }
 
     /**
@@ -262,5 +262,55 @@ class PollController extends Controller
             'results' => $results,
             'owned' => $owned,
         ]);
+    }
+
+    /**
+     * Display poll results in CSV.
+     *
+     * @param  \App\Poll  $poll
+     * @return \Illuminate\Http\Response
+     */
+    public function resultsCSV(Poll $poll)
+    {
+        $voteCount = $poll->votes()->count();
+
+        $results = DB::table('options')
+                     ->leftJoin('scores', 'scores.option_id', '=', 'options.id')
+                     ->where('options.poll_id', '=', $poll->id)
+                     ->groupBy('options.id')
+                     ->selectRaw('options.text as text, IFNULL(SUM(scores.score), 0) as score')
+                     ->orderBy('score', 'desc')
+                     ->orderBy('options.id')
+                     ->get();
+
+        $owned = $poll->owned(auth()->user());
+
+        $rows = [
+            [$poll->question],
+            ['Total Votes', $voteCount],
+        ];
+
+        switch ($poll->type) {
+            case 'approval':
+            case 'fptp':
+                $rows[] = ['Option', 'Fraction', 'Votes'];
+                break;
+            case 'score':
+                $rows[] = ['Option', 'Average', 'Score'];
+                break;
+        }
+
+        foreach ($results as $result) {
+            $average = $voteCount ? $result->score / $voteCount : 0;
+            $rows[] = [$result->text, $average, $result->score];
+        }
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            foreach ($rows as $row) {
+                fputcsv($out, $row);
+            }
+            fclose($out);
+        }, 'results.csv', ['Content-Type' => 'text/csv']);
     }
 }
