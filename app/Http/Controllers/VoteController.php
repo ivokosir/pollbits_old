@@ -89,7 +89,8 @@ class VoteController extends Controller
             $score->save();
         }
 
-        return redirect()->route('polls.results', $vote->poll);
+        $route = $poll->canSeeResults(auth()->user()) ? 'polls.results' : 'polls.show';
+        return redirect()->route($route, $vote->poll);
     }
 
     /**

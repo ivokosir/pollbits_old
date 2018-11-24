@@ -21,14 +21,13 @@
         </select>
     </div>
 
+    @auth
     <div class="custom-control custom-checkbox mb-3">
         <input type="checkbox" class="custom-control-input" id="resultsHidden" name="results_hidden">
         <label class="custom-control-label" for="resultsHidden">Hide Results</label>
-        @auth
         <small id="passwordHelpBlock" class="form-text text-muted">
             You will still be able to see results.
         </small>
-        @endauth
     </div>
     <div class="custom-control custom-checkbox mb-3">
         <input type="checkbox" class="custom-control-input" id="private" name="private">
@@ -37,6 +36,13 @@
             Poll will not show in public search.
         </small>
     </div>
+    @endauth
+
+    @guest
+    <small class="d-block text-muted mb-3">
+        <a href="{{ route('register') }}">Create account</a> to access more features.
+    </small>
+    @endguest
 
     <button type="submit" class="btn btn-primary">Create</button>
 </form>

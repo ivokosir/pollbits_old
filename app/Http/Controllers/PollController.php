@@ -100,8 +100,8 @@ class PollController extends Controller
         $poll = new Poll;
         $poll->type = $request->input('type');
         $poll->question = $request->input('question');
-        $poll->results_hidden = $request->input('results_hidden') ? true : false;
-        $poll->private = $request->input('private') ? true : false;
+        $poll->results_hidden = ($request->input('results_hidden') and auth()->check()) ? true : false;
+        $poll->private = ($request->input('private') and auth()->check()) ? true : false;
         $poll->closed = false;
         $poll->user_id = auth()->user()->id ?? null;
         $poll->save();
