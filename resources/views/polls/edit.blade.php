@@ -6,7 +6,7 @@
 <form class="card-body" action="{{ route('polls.update', $poll->id) }}" method="POST">
     @csrf
     @method('PUT')
-    <input type="text" class="form-control form-control-lg mb-3" value="{{ $poll->question }}" placeholder="Poll Question" name="question" maxlength="255" required autofocus>
+    <input type="text" class="form-control form-control-lg mb-3" value="{{ $poll->question }}" placeholder="Poll Question" name="question" maxlength="250" required autofocus>
     @foreach ($poll->options as $option)
         @include('includes.option', [
             'edit' => true,

@@ -22,7 +22,7 @@
             <!-- Right Side Of Navbar -->
             <ul class="navbar-nav ml-auto">
                 <form action="{{ route('polls.index') }}" class="form-inline mx-md-2 my-2 my-md-0">
-                    <input class="form-control" type="text" placeholder="Search" name="search" value="{{ $search ?? '' }}" maxlength="255" required>
+                    <input class="form-control" type="text" placeholder="Search" name="search" value="{{ $search ?? '' }}" maxlength="250" required>
                 </form>
                 <!-- Authentication Links -->
                 @guest

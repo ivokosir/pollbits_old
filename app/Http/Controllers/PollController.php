@@ -33,7 +33,7 @@ class PollController extends Controller
     public function index(Request $request)
     {
         $this->validate($request, [
-            'search' => 'string|max:255',
+            'search' => 'string|max:250',
         ]);
 
         $search = $request->input('search');
@@ -55,7 +55,7 @@ class PollController extends Controller
     public function owned(Request $request)
     {
         $this->validate($request, [
-            'search' => 'string|max:255',
+            'search' => 'string|max:250',
         ]);
 
         $search = $request->input('search');
@@ -87,9 +87,9 @@ class PollController extends Controller
     public function store(Request $request)
     {
         $this->validate($request, [
-            'question' => 'required|string|max:255',
+            'question' => 'required|string|max:250',
             'options' => 'required|array|min:2',
-            'options.*' => 'required|string|max:255',
+            'options.*' => 'required|string|max:250',
             'type' => [
                 'required',
                 'string',
@@ -179,9 +179,9 @@ class PollController extends Controller
     public function update(Request $request, Poll $poll)
     {
         $this->validate($request, [
-            'question' => 'required|string|max:255',
+            'question' => 'required|string|max:250',
             'options' => 'required|array|size:' . sizeof($poll->options),
-            'options.*' => 'required|string|max:255',
+            'options.*' => 'required|string|max:250',
         ]);
 
         $poll->question = $request->input('question');

@@ -5,7 +5,7 @@
 
 <form class="card-body" action="{{ route('polls.store') }}" method="POST">
     @csrf
-    <input type="text" class="form-control form-control-lg mb-3" placeholder="Poll Question" name="question" maxlength="255" required autofocus>
+    <input type="text" class="form-control form-control-lg mb-3" placeholder="Poll Question" name="question" maxlength="250" required autofocus>
     @include('includes.option')
     @include('includes.option')
     <div id="insertBefore" class="form-group text-center">
